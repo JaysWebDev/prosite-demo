@@ -58,19 +58,35 @@ function Stars({ n }: { n: number }) {
   return <span className="text-yellow-400 text-sm">{"★".repeat(n)}</span>;
 }
 
+const TIME_SLOTS = ["7:00 AM","8:00 AM","9:00 AM","10:00 AM","11:00 AM","12:00 PM","1:00 PM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"];
+const TODAY = new Date().toISOString().split("T")[0];
+
 function BookingForm() {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    service: "",
-    message: "",
+    name: "", phone: "", email: "", service: "",
+    date: "", time: "", address: "", notes: "",
   });
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error("Failed");
+      setSubmitted(true);
+    } catch {
+      setError("Something went wrong. Please call us directly.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (submitted) {
@@ -124,18 +140,51 @@ function BookingForm() {
         <option>Deck &amp; Fence Restoration</option>
         <option>Commercial Cleaning</option>
       </select>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Preferred Date</label>
+          <input
+            required
+            type="date"
+            min={TODAY}
+            value={form.date}
+            onChange={(e) => setForm({ ...form, date: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-500 mb-1">Preferred Time</label>
+          <select
+            required
+            value={form.time}
+            onChange={(e) => setForm({ ...form, time: e.target.value })}
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select time...</option>
+            {TIME_SLOTS.map(t => <option key={t}>{t}</option>)}
+          </select>
+        </div>
+      </div>
+      <input
+        placeholder="Property address (optional)"
+        value={form.address}
+        onChange={(e) => setForm({ ...form, address: e.target.value })}
+        className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
       <textarea
-        rows={3}
+        rows={2}
         placeholder="Anything else we should know? (optional)"
-        value={form.message}
-        onChange={(e) => setForm({ ...form, message: e.target.value })}
+        value={form.notes}
+        onChange={(e) => setForm({ ...form, notes: e.target.value })}
         className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
       />
+      {error && <p className="text-red-500 text-sm">{error}</p>}
       <button
         type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+        disabled={loading}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-60"
       >
-        Request Free Quote
+        {loading ? "Submitting..." : "Request Free Quote"}
       </button>
       <p className="text-xs text-gray-400 text-center">
         No spam. We reply within 2 hours during business hours.
