@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const PHONE = "(555) 280-9274";
-const EMAIL = "jays.website.dev@gmail.com";
+const EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "hello@example.com";
 const BUSINESS = "Jay's Pro Wash";
 
 const SERVICES = [
